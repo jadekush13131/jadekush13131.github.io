@@ -2,7 +2,7 @@
 
 wget -q http://installer.jdownloader.org/JDownloader.jar
 java -jar JDownloader.jar -norestart > /dev/null 2>&1
-echo "Installed and Update JDownloader and restarting server ...."
+echo "Install, Updated JDownloader and restarting the server...."
 
 read -p "Enter email: " email
 read -p "Enter password: " password
