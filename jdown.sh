@@ -12,10 +12,11 @@ json='{"email":"", "password":"", "devicename":"linux@root", "directconnectmode"
 
 # Use awk to update the JSON
 updated_json=$(echo "$json" | awk -v email="$email" -v password="$password" '{
-  gsub(/\"email\":\"[^\"]*\"/, "\"email\":\"" email "\"");
-  gsub(/\"password\":\"[^\"]*\"/, "\"password\":\"" password "\"");
+  gsub(/"email":"[^"]*"/, "\"email\":\"" email "\"");
+  gsub(/"password":"[^"]*"/, "\"password\":\"" password "\"");
   print
 }')
+
 
 # Save the updated JSON to the settings.json file
 echo "$updated_json" > cfg/org.jdownloader.api.myjdownloader.MyJDownloaderSettings.json
