@@ -1,3 +1,4 @@
+#!/usr/bin/pwsh -Command
 try {
 	Get-Command aria2c -ErrorAction Stop | Out-Null
 	Write-Host -f Green "[✔] aria2c is installed."
