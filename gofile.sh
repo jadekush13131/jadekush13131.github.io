@@ -6,7 +6,7 @@ if ! command -v aria2c > /dev/null 2>&1; then
 fi
 
 if ! command -v wget > /dev/null 2>&1 || ! command -v curl > /dev/null 2>&1; then
-    echo "wget and curl is installed, install both of them first."
+    echo "wget and curl is not installed, install both of them first."
     exit 1
 fi
 
