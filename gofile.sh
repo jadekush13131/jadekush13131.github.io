@@ -9,13 +9,22 @@ if ! command -v wget > /dev/null 2>&1 || ! command -v curl > /dev/null 2>&1; the
     echo "wget and curl is not installed, install both of them first."
     exit 1
 fi
-
+if command -v sudo > /dev/null 2>&1;then
+    is_root=no
+fi
 if ! command -v jq > /dev/null 2>&1; then
-     echo "jq is not installed, Installing ...."
-     wget "https://github.com/jqlang/jq/releases/latest/download/jq-linux-amd64" > /dev/null 2>&1
-     chmod +x jq-linux-amd64
-     mv jq-linux-amd64 /usr/bin/jq
+     echo "jq is not installed, Installing ..."
+     if [ "$is_root" = "no" ];then 
+        wget -q "https://github.com/jqlang/jq/releases/latest/download/jq-linux-amd64" 
+        sudo chmod +x jq-linux-amd64
+        sudo mv jq-linux-amd64 /usr/bin/jq
+     else 
+        wget -q "https://github.com/jqlang/jq/releases/latest/download/jq-linux-amd64" 
+        chmod +x jq-linux-amd64
+        mv jq-linux-amd64 /usr/bin/jq
+     fi
      echo "Done."
+     echo "Relaunch the script"
      exit
 fi
 
