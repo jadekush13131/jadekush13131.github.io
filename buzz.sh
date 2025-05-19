@@ -10,4 +10,4 @@ if [ -z "$1" ] || ! echo "$1" | grep -q '^https://buzzheavier.com'; then
 fi
 link=$1
 dl_link=$(curl -sD - "$1/download"  --header "Referer: $1" | grep -i "hx-redirect" | sed 's/.*hx-redirect: //I')
-aria2c -x5  "https://buzzheavier.com$dl_link"
+aria2c -x5  "$dl_link"
