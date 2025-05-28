@@ -1,5 +1,11 @@
 #!/bin/sh
-
+green="\033[0;32m"
+rc="\033[0m"
+red="\033[0;31m"
+if [ "$(id -u)" -ne 0 ]; then
+  printf "${red}This script must be run as root. Exiting. ${rc}\n"
+  exit 1
+fi
 if ! command -v aria2c > /dev/null 2>&1; then
     echo "aria2c is not installed" >&2
     exit 1
@@ -9,28 +15,18 @@ if ! command -v wget > /dev/null 2>&1 || ! command -v curl > /dev/null 2>&1; the
     echo "wget and curl is not installed, install both of them first."
     exit 1
 fi
-if command -v sudo > /dev/null 2>&1;then
-    is_root=no
-fi
 if ! command -v jq > /dev/null 2>&1; then
      echo "jq is not installed, Installing ..."
-     if [ "$is_root" = "no" ];then 
-        wget -q "https://github.com/jqlang/jq/releases/latest/download/jq-linux-amd64" 
-        sudo chmod +x jq-linux-amd64
-        sudo mv jq-linux-amd64 /usr/bin/jq
-     else 
-        wget -q "https://github.com/jqlang/jq/releases/latest/download/jq-linux-amd64" 
-        chmod +x jq-linux-amd64
-        mv jq-linux-amd64 /usr/bin/jq
-     fi
+     wget -q "https://github.com/jqlang/jq/releases/latest/download/jq-linux-amd64" 
+     chmod +x jq-linux-amd64
+     mv jq-linux-amd64 /usr/bin/jq
      echo "Done."
      echo "Relaunch the script"
      exit
 fi
 
 if [ -z "$1" ] || ! echo "$1" | grep -q '^https://gofile.io/d/'; then
-    echo "Need a valid URL" >&2
-    echo "aria2c should be installed to work" >&2
+    echo "need a valid url" 
     exit 1
 fi
 
