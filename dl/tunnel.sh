@@ -19,6 +19,7 @@ if [ "$(id -u)" -ne 0 ]; then
   sudo ln -sf $DIR/cloudflared /usr/local/bin/cloudflared
 else
   mkdir -p /usr/local/bin
+  mv cloudflared-linux-amd64 $DIR/cloudflared
   ln -sf $DIR/cloudflared /usr/local/bin/cloudflared
 fi
 
