@@ -4,6 +4,7 @@ rc="\033[0m"
 red="\033[0;31m"
 
 DIR="$HOME/.local/bin"
+mkdir -p $DIR
 
 if ! command -v aria2c > /dev/null 2>&1; then
     echo "aria2c is not installed" >&2
@@ -24,6 +25,7 @@ if ! command -v jq > /dev/null 2>&1; then
       sudo ln -s $DIR/jq /usr/local/bin/jq
     else 
       mkdir -p /usr/local/bin
+      mv jq-linux-amd64 $DIR/jq
       ln -s $DIR/jq /usr/local/bin/jq
     fi
      printf "${green}installed jq${rc}\n"
