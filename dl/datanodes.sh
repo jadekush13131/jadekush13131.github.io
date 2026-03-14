@@ -16,7 +16,7 @@ fi
 
 id=$(echo "$1" | cut -d/ -f4)
 
-url=$(curl -s -X POST "https://datanodes.to/download" -F "op=download2"  -F "id=$id"  -F "rand="  -F "referer=https://datanodes.to/download"  -F "method_free=Free Download >>"  -F "method_premium="  -F "__dl=1") 
+url=$(curl -s -X POST "https://datanodes.to/download" -F "op=download2"  -F "id=$id" -F "g_captch__a=1") 
 
 if ! echo "$url" | grep -qE '^\{'; then
   printf "errored. something went wrong.\n"
