@@ -22,4 +22,4 @@ else
   mv cloudflared-linux-amd64 $DIR/cloudflared
   ln -sf $DIR/cloudflared /usr/local/bin/cloudflared
 fi
-
+printf "${green}Cloudflared successfully installed!.\n${rc}"
