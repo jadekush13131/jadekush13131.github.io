@@ -1,8 +1,194 @@
-<html>
-  <head>
-    <title>TEST</title>
-    <body>
-      <h1>testing website</h1>
-    </body>
-  </head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index of /</title>
+    <style>
+        /* Classic HTTP File Server Styling */
+        body {
+            font-family: monospace;
+            background-color: #ffffff;
+            color: #000000;
+            margin: 20px;
+            font-size: 14px;
+        }
+        h1 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            max-width: 800px;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 4px 8px;
+        }
+        th {
+            border-bottom: 1px solid #000000;
+        }
+        a {
+            color: #0000ee;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .size {
+            text-align: right;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #000000;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="page-title">Index of /</h1>
+    <hr>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th class="size">Size</th>
+            </tr>
+        </thead>
+        <tbody id="file-list">
+            <tr><td colspan="2">Loading repository contents...</td></tr>
+        </tbody>
+    </table>
+    <hr>
+
+    <script>
+        // ==========================================================
+        // CONFIGURATION
+        // Auto-detects based on *.github.io hostname. 
+        // Override via URL: ?owner=xxx&repo=xxx&path=yyy
+        // ==========================================================
+        let owner = 'jadekush13131';
+        let repo = 'jadekush13131.github.io';
+
+        const hostname = window.location.hostname;
+        if (hostname.endsWith('.github.io')) {
+            const parts = hostname.split('.');
+            if (parts.length === 3) {
+                owner = parts[0];
+                repo = `${owner}.github.io`; 
+            }
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('owner')) owner = params.get('owner');
+        if (params.has('repo')) repo = params.get('repo');
+        
+        // Get current path from URL, default to empty string (root)
+        let currentPath = params.get('path') ? decodeURIComponent(params.get('path')).replace(/\/+$/, '') : '';
+
+        async function fetchRepoContents() {
+            const fileList = document.getElementById('file-list');
+            const pageTitle = document.getElementById('page-title');
+            
+            // Update title to show current path, but WITHOUT owner/repo
+            const displayPath = currentPath ? `/${currentPath}/` : '/';
+            document.title = `Index of ${displayPath}`;
+            pageTitle.textContent = `Index of ${displayPath}`;
+
+            // GitHub API endpoint for specific directory contents
+            const apiPath = currentPath ? `contents/${currentPath}` : 'contents/';
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/${apiPath}`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status} ${response.statusText}. Check if the path exists and the repo is public.`);
+                }
+                
+                const data = await response.json();
+                
+                // Exclude the .github folder and anything inside it
+                const filteredData = data.filter(item => 
+                    item.name !== '.github' && !item.path.startsWith('.github/')
+                );
+                
+                // Sort: directories first, then files, alphabetically
+                filteredData.sort((a, b) => {
+                    if (a.type === b.type) {
+                        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+                    }
+                    return a.type === 'dir' ? -1 : 1;
+                });
+
+                fileList.innerHTML = '';
+                
+                // Add Parent Directory link
+                const parentRow = document.createElement('tr');
+                const parentPath = currentPath.split('/').slice(0, -1).join('/');
+                const parentHref = parentPath ? `?path=${encodeURIComponent(parentPath)}` : '?path=';
+                
+                parentRow.innerHTML = `
+                    <td><a href="${parentHref}">Parent Directory</a></td>
+                    <td class="size">-</td>
+                `;
+                fileList.appendChild(parentRow);
+
+                if (filteredData.length === 0) {
+                    const emptyRow = document.createElement('tr');
+                    emptyRow.innerHTML = `<td colspan="2">No files found.</td>`;
+                    fileList.appendChild(emptyRow);
+                } else {
+                    filteredData.forEach(item => {
+                        const row = document.createElement('tr');
+                        
+                        const nameCell = document.createElement('td');
+                        const nameLink = document.createElement('a');
+                        
+                        if (item.type === 'dir') {
+                            // Link to subfolder via query parameter
+                            nameLink.href = `?path=${encodeURIComponent(item.path)}`;
+                            nameLink.textContent = `${item.name}/`;
+                        } else {
+                            // Link to raw file download
+                            nameLink.href = item.download_url;
+                            nameLink.textContent = item.name;
+                        }
+                        nameCell.appendChild(nameLink);
+                        
+                        const sizeCell = document.createElement('td');
+                        sizeCell.className = 'size';
+                        sizeCell.textContent = item.type === 'dir' ? '-' : formatBytes(item.size);
+                        
+                        row.appendChild(nameCell);
+                        row.appendChild(sizeCell);
+                        fileList.appendChild(row);
+                    });
+                }
+
+            } catch (error) {
+                fileList.innerHTML = `
+                    <tr>
+                        <td colspan="2" style="color: red;">
+                            Error: ${error.message}<br><br>
+                            <strong>Tip:</strong> Override via URL parameters, e.g.,<br>
+                            <code>?owner=octocat&repo=Hello-World&path=src</code>
+                        </td>
+                    </tr>`;
+                console.error('Failed to fetch repo contents:', error);
+            }
+        }
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchRepoContents);
+    </script>
+</body>
 </html>
