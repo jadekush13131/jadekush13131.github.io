@@ -1,55 +1,44 @@
 #!/bin/sh
-green="\033[0;32m"
-rc="\033[0m"
-red="\033[0;31m"
 
-DIR="$HOME/.local/bin"
-mkdir -p $DIR
-
-if ! command -v aria2c > /dev/null 2>&1; then
-    echo "aria2c is not installed" >&2
-    exit 1
-fi
-
-if ! command -v wget > /dev/null 2>&1 || ! command -v curl > /dev/null 2>&1; then
-    echo "wget and curl is not installed, install both of them first."
-    exit 1
-fi
-if ! command -v jq > /dev/null 2>&1; then
-     printf "jq is not installed, ${green}Installing ...\n${rc}"
-     wget -q "https://github.com/jqlang/jq/releases/latest/download/jq-linux-amd64" 
-     chmod +x jq-linux-amd64
-    if [ "$(id -u)" -ne 0 ]; then
-      sudo mkdir -p /usr/local/bin
-      mv jq-linux-amd64 $DIR/jq
-      sudo ln -s $DIR/jq /usr/local/bin/jq
-    else 
-      mkdir -p /usr/local/bin
-      mv jq-linux-amd64 $DIR/jq
-      ln -s $DIR/jq /usr/local/bin/jq
+for cmd in curl wget aria2c jq; do
+    if ! command -v "$cmd" > /dev/null 2>&1; then
+        echo "$cmd not found" >&2
+        exit 1
     fi
-     printf "${green}installed jq${rc}\n"
-     echo "Relaunch the script"
-     exit
-fi
+done    
 
 if [ -z "$1" ] || ! echo "$1" | grep -q '^https://gofile.io/d/'; then
     echo "need a valid url" 
     exit 1
 fi
-
+ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:155.0) Gecko/20100101 Firefox/155.0"
 token=$(curl -s -X POST https://api.gofile.io/accounts | jq -r .data.token )
 link=$1
+time_window=$(( $(date +%s) / 14400))
 Id=$(echo "$link" | cut -d'/' -f5)
-webToken="4fd6sg89d7s6"
-content="https://api.gofile.io/contents/$Id"
-valid=$(curl -s -H "X-Website-Token: $webToken" -H "Authorization: Bearer $token" "$content" | jq -r .status)
 
-if [ "$valid" != "ok" ]; then
+string="$ua::en-US::$token::$time_window::12af056dacea0b"
+
+hash=$(echo -n $string | sha256sum | cut -d ' ' -f1)
+
+curl_with_headers() {
+    curl \
+        -H "Authorization: Bearer $token" \
+        -H "User-Agent: $ua" \
+        -H "X-Website-Token: $hash" \
+        -H "X-BL: en-US" \
+        "$@"
+}
+
+content="https://api.gofile.io/contents/$Id"
+response=$(curl_with_headers -s "$content")
+
+if [ $(printf '%s' "$response" | jq -r '.status') != "ok" ]; then
     echo "File does not exist" >&2
     exit 1
 fi
-dl_link=$(curl -s -H "X-Website-Token: $webToken" -H "Authorization: Bearer $token" "$content"  | jq -r .data.children[].link)
+
+dl_link=$(echo $response |  jq -r '.data.children[].link')
 echo "$dl_link" > /tmp/temp.txt
 aria2c -x3 -c --header="Authorization: Bearer $token" -i /tmp/temp.txt -Z
 rm /tmp/temp.txt
