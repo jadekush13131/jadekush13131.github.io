@@ -84,3 +84,7 @@ complete=$(curl -s -X POST 'https://api.mocha.my/api/files/multipart/complete' \
  -d $complete_payload ) || exit 1
 
 echo $complete | jq
+
+
+#U2FsdGVkX1/WBjj0Pn/Rqw+aSR18WIo2To5XyqRdIIdTtwu34HJwQfOmsiwTNfebb+wc+iL2nAEqLa7dCjYcuBwYODRAPcLLm3xAXUkRo/Y=
+# Aa
