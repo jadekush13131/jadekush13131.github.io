@@ -1,13 +1,33 @@
 #!/bin/sh
 
-if ! command -v curl > /dev/null 2>&1 || ! command -v aria2c > /dev/null 2>&1;then
-        echo "Either curl or aria2c is not installed"
+for cmd in curl grep tr awk aria2c;do
+        if ! command -v "$cmd" > /dev/null 2>&1; then
+                printf "$cmd not found\n" >&2
+                exit 1
+        fi
+done
+
+url="$1"
+
+if [ -z "${url}" ] || ! echo "$1" | grep -q '^https://buzzheavier.com/'; then
+  printf "need vaild url\n" >&2
+  exit 1
+fi
+
+html=$(curl -sL -A \
+ "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+ -H "HX-Request: true" \
+ "$url")
+
+request=$(echo "$html" | grep -oP 'hx-get="\K/[^"]+/download\?t=[^"]+' | head -n 1)
+
+if [ -z "$request" ]; then
+        printf "invalid link\n"
         exit 1
 fi
-if [ -z "$1" ] || ! echo "$1" | grep -q '^https://buzzheavier.com'; then
-    echo "need url" >&2
-    exit 1
-fi
-link=$1
-dl_link=$(curl -sD - "$1/download"  --header "Referer: $1" | grep -i "hx-redirect" | sed 's/.*hx-redirect: //I')
-aria2c -x5 -c "$dl_link"
+
+headers=$(curl -sI -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" -H "HX-Request: true" "https://buzzheavier.com$request")
+
+direct=$(echo "$headers" |  grep -i "^hx-redirect:" | awk '{print $2}' | tr -d '\r')
+
+aria2c -x5 -c -s5 -k1M --summary-interval=1 "$direct"
